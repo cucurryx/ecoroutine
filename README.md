@@ -31,7 +31,8 @@ to work.
 与C++11中std::thread相比，ecoroutine不需要陷入内核态进行切换，性能有稳定50%以上优势。
 
 测试为创建20万次thread/coroutine的时间消耗，结果如下：
-![./pics/bench.png](bench)
+
+![./pics/bench.png](./pics/bench.png)
 
 测试代码：
 
