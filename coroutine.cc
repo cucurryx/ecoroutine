@@ -11,6 +11,8 @@
 #include <sstream>
 
 
+static int free_cnt = 0;
+
 namespace ecoroutine {
 
 static void schedule();
@@ -61,13 +63,15 @@ public:
 
     Scheduler() = default;
 
+    ~Scheduler() = default;
+
     coroutine_t Create(CoroutineFunc &func);
 
     coroutine_t RunningId() {
         return running_id_;
     }
 
-    void Start(coroutine_t c);
+    void Run(coroutine_t c);
 
     void Yield();
 
@@ -102,6 +106,7 @@ coroutine_t Scheduler::Create(CoroutineFunc &func) {
 
     ready_coroutines_.push_back(p);
     all_coroutines_.push_back(p);
+
     id_map_[p->id_] = p;
 
     return p->id_;
@@ -122,26 +127,15 @@ void Scheduler::DoSchedule() {
     } else {
         //not main coroutines
         if (curr->state_ == CoState::kDead) {
+            id_map_.erase(curr->id_);
+
+            ready_coroutines_.remove(curr);
             all_coroutines_.remove(curr);
         }
-        if (curr->state_ == CoState::kHangUp) {
-            ready_coroutines_.push_back(curr);
-        }
 
-        if (ready_coroutines_.empty()) {
-            running_id_ = 0;
-            swapcontext(&curr->context_, &main_context_);
-        } else {
-            CoroutinePtr next = ready_coroutines_.front();
-            ready_coroutines_.pop_front();
-
-            if (next->state_ == CoState::kReady || next->state_ == CoState::kHangUp) {
-                next->state_ = CoState::kRunning;
-                next->context_.uc_link = &main_context_;
-                running_id_ = next->id_;
-                swapcontext(&curr->context_, &next->context_);
-            }
-        }
+        //switch to main coroutine
+        running_id_ = 0;
+        swapcontext(&curr->context_, &main_context_);
     }
 }
 
@@ -153,10 +147,13 @@ void Scheduler::Yield() {
     }
 
     curr->state_ = CoState::kHangUp;
-    DoSchedule();
+    ready_coroutines_.push_back(curr);
+    running_id_ = 0;
+
+    swapcontext(&curr->context_, &main_context_);
 }
 
-void Scheduler::Start(coroutine_t c) {
+void Scheduler::Run(coroutine_t c) {
     CoroutinePtr p = nullptr;
 
     if (id_map_.count(c)) {
@@ -166,6 +163,7 @@ void Scheduler::Start(coroutine_t c) {
     }
 
     p->state_ = CoState::kReady;
+
     DoSchedule();
 }
 
@@ -185,8 +183,8 @@ void yield() {
     scheduler.Yield();
 }
 
-void start(coroutine_t c) {
-    scheduler.Start(c);
+void run(coroutine_t c) {
+    scheduler.Run(c);
 }
 
 static void schedule() {

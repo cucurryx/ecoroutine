@@ -38,7 +38,7 @@ coroutine_t create(CoroutineFunc &func);
 
 coroutine_t self();
 
-void start(coroutine_t c);
+void run(coroutine_t c);
 
 void yield();
 

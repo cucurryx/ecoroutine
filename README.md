@@ -27,6 +27,57 @@ it'll report an error. Because coroutine is non-preemptive, the only way to give
 yield. And the current coroutine's state will change to HangUp, and the scheduler will begin
 to work.
 
+#### benchmark
+与C++11中std::thread相比，ecoroutine不需要陷入内核态进行切换，性能有稳定50%以上优势。
+
+测试为创建20万次thread/coroutine的时间消耗，结果如下：
+![./pics/bench.png](bench)
+
+测试代码：
+
+```C++
+constexpr uint32_t loop_times = 100000;
+
+uint64_t coroutine_test() {
+    ecoroutine::CoroutineFunc func = [](){ ecoroutine::yield(); };
+    clock_t start = clock();
+    for (int i = 0; i < loop_times; ++i) {
+        ecoroutine::coroutine_t coroutine1 = ecoroutine::create(func);
+        ecoroutine::coroutine_t coroutine2 = ecoroutine::create(func);
+        ecoroutine::run(coroutine1);
+        ecoroutine::run(coroutine2);
+        ecoroutine::run(coroutine1);
+        ecoroutine::run(coroutine2);
+    }
+    clock_t end = clock();
+
+    return end - start;
+}
+
+uint64_t thread_test() {
+    auto func = [](){};
+    clock_t start = clock();
+    for (int i = 0; i < loop_times; ++i) {
+        std::thread thread1(func);
+        std::thread thread2(func);
+        thread1.join();
+        thread2.join();
+    }
+    clock_t end = clock();
+
+    return end - start;
+}
+
+int main(int argc, char* argv[]) {
+    const int kMicrosecondsPerSecond = 1000 * 1000;
+    printf("coroutine: %d times %f s\n", loop_times * 2,
+           static_cast<double>(coroutine_test()) / kMicrosecondsPerSecond);
+    printf("thread: %d times %f s\n", loop_times * 2,
+           static_cast<double>(thread_test()) / kMicrosecondsPerSecond);
+    return 0;
+}
+
+```
 
 #### example
 
