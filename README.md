@@ -33,11 +33,12 @@ to work.
 ```C++
 int main() {
     vector<ecoroutine::coroutine_t> coroutines;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 10; ++i) {
         ecoroutine::CoroutineFunc func = [i](){
-            for (int j = 0; j < 5; ++j) {
-                cout << "[coroutine_t " << ecoroutine::self() << "] " << j << endl;
+            for (int j = 0; j < 3; ++j) {
+                cout << "[coroutine_t " << ecoroutine::self() << "] before yield:" << j << endl;
                 ecoroutine::yield();
+                cout << "[coroutine_t " << ecoroutine::self() << "] after yiled: " << j << endl;
             }
         };
         coroutines.push_back(ecoroutine::create(func));
@@ -52,29 +53,64 @@ int main() {
 
 result:
 ```
-[coroutine_t 1] 0
-[coroutine_t 2] 0
-[coroutine_t 3] 0
-[coroutine_t 4] 0
-[coroutine_t 5] 0
-[coroutine_t 1] 1
-[coroutine_t 2] 1
-[coroutine_t 3] 1
-[coroutine_t 4] 1
-[coroutine_t 5] 1
-[coroutine_t 1] 2
-[coroutine_t 2] 2
-[coroutine_t 3] 2
-[coroutine_t 4] 2
-[coroutine_t 5] 2
-[coroutine_t 1] 3
-[coroutine_t 2] 3
-[coroutine_t 3] 3
-[coroutine_t 4] 3
-[coroutine_t 5] 3
-[coroutine_t 1] 4
-[coroutine_t 2] 4
-[coroutine_t 3] 4
-[coroutine_t 4] 4
-[coroutine_t 5] 4
+[coroutine_t 1] before yield:0
+[coroutine_t 2] before yield:0
+[coroutine_t 3] before yield:0
+[coroutine_t 4] before yield:0
+[coroutine_t 5] before yield:0
+[coroutine_t 6] before yield:0
+[coroutine_t 7] before yield:0
+[coroutine_t 8] before yield:0
+[coroutine_t 9] before yield:0
+[coroutine_t 10] before yield:0
+[coroutine_t 1] after yiled: 0
+[coroutine_t 1] before yield:1
+[coroutine_t 2] after yiled: 0
+[coroutine_t 2] before yield:1
+[coroutine_t 3] after yiled: 0
+[coroutine_t 3] before yield:1
+[coroutine_t 4] after yiled: 0
+[coroutine_t 4] before yield:1
+[coroutine_t 5] after yiled: 0
+[coroutine_t 5] before yield:1
+[coroutine_t 6] after yiled: 0
+[coroutine_t 6] before yield:1
+[coroutine_t 7] after yiled: 0
+[coroutine_t 7] before yield:1
+[coroutine_t 8] after yiled: 0
+[coroutine_t 8] before yield:1
+[coroutine_t 9] after yiled: 0
+[coroutine_t 9] before yield:1
+[coroutine_t 10] after yiled: 0
+[coroutine_t 10] before yield:1
+[coroutine_t 1] after yiled: 1
+[coroutine_t 1] before yield:2
+[coroutine_t 2] after yiled: 1
+[coroutine_t 2] before yield:2
+[coroutine_t 3] after yiled: 1
+[coroutine_t 3] before yield:2
+[coroutine_t 4] after yiled: 1
+[coroutine_t 4] before yield:2
+[coroutine_t 5] after yiled: 1
+[coroutine_t 5] before yield:2
+[coroutine_t 6] after yiled: 1
+[coroutine_t 6] before yield:2
+[coroutine_t 7] after yiled: 1
+[coroutine_t 7] before yield:2
+[coroutine_t 8] after yiled: 1
+[coroutine_t 8] before yield:2
+[coroutine_t 9] after yiled: 1
+[coroutine_t 9] before yield:2
+[coroutine_t 10] after yiled: 1
+[coroutine_t 10] before yield:2
+[coroutine_t 1] after yiled: 2
+[coroutine_t 2] after yiled: 2
+[coroutine_t 3] after yiled: 2
+[coroutine_t 4] after yiled: 2
+[coroutine_t 5] after yiled: 2
+[coroutine_t 6] after yiled: 2
+[coroutine_t 7] after yiled: 2
+[coroutine_t 8] after yiled: 2
+[coroutine_t 9] after yiled: 2
+[coroutine_t 10] after yiled: 2
 ```
