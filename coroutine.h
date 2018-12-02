@@ -9,12 +9,10 @@
 #include <stdlib.h>
 
 #include <functional>
-#include <list>
-#include <string>
-#include <sstream>
 #include <memory>
 
-//namespace ecoroutine {
+
+namespace ecoroutine {
 
 class Coroutine;
 
@@ -44,7 +42,7 @@ coroutine_t create(CoFunction &func);
 void yield();
 void schedule(coroutine_t co);
 
-//};
+};
 
 
 #endif //ECOROUTINE_COROUTINE_H
