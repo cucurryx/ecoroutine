@@ -28,13 +28,13 @@ yield. And the current coroutine's state will change to HangUp, and the schedule
 to work.
 
 #### benchmark
-与C++11中std::thread相比，ecoroutine不需要陷入内核态进行切换，性能有稳定50%以上优势。
+Comparing to C++11 std::thread, ecoroutine doesn't need to do context switch in kernel mode. So it's quietly faster than std::thread.
 
-测试为创建20万次thread/coroutine的时间消耗，结果如下：
+I create and destroy thread/coroutine for 2,000,000 times to show the difference of their performance. 
 
 ![./pics/bench.png](./pics/bench.png)
 
-测试代码：
+benchmark code：
 
 ```C++
 constexpr uint32_t loop_times = 100000;
