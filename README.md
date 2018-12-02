@@ -6,8 +6,8 @@ A simple stackful asymmetric scheduling coroutine library for modern C++.
 
 #### create a coroutine
 ```C++
-        ecoroutine::CoroutineFunc func = [i](){};
-        coroutine_t c = ecoroutine::create(func);
+ecoroutine::CoroutineFunc func = [i](){};
+coroutine_t c = ecoroutine::create(func);
 ```
 Notice: this `create` is different from the `pthread_create`, since the coroutine will
 not begin to work immediatly. You need to call `ecoroutine::start`.

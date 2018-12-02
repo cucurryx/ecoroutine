@@ -4,6 +4,8 @@
 
 #include "coroutine.h"
 
+#include <ucontext.h>
+
 #include <iostream>
 #include <list>
 #include <sstream>
