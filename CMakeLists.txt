@@ -3,4 +3,4 @@ project(ecoroutine)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(ecoroutine main.cpp coroutine.cc coroutine.h)
+add_executable(ecoroutine example.cc coroutine.cc coroutine.h)

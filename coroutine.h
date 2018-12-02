@@ -18,7 +18,7 @@ class Coroutine;
 
 constexpr u_int32_t kStackSize = 1024 * 1024;
 
-using CoFunction = std::function<void()>;
+using CoroutineFunc = std::function<void()>;
 using CoPtr = std::shared_ptr<Coroutine>;
 using coroutine_t = u_int32_t;
 
@@ -38,9 +38,10 @@ static void HandleError(const std::string &msg) {
 
 //predeclerations of functions
 
-coroutine_t create(CoFunction &func);
+coroutine_t create(CoroutineFunc &func);
+coroutine_t self();
+void start(coroutine_t c);
 void yield();
-void schedule(coroutine_t co);
 
 };
 

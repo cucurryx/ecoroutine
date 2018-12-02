@@ -1,23 +1,25 @@
 #include <iostream>
+#include <vector>
 
 #include "coroutine.h"
 
 using namespace std;
 
 
-void test() {
-    for (int i = 0; i < 10; ++i) {
-        ecoroutine::CoFunction func = [i](){
-            cout << "begin" << i << endl;
-            ecoroutine::yield();
-            cout << "end" << i << endl;
-
-        };
-        ecoroutine::create(func);
-    }
-}
-
 int main() {
-    test();
+    vector<ecoroutine::coroutine_t> coroutines;
+    for (int i = 0; i < 5; ++i) {
+        ecoroutine::CoroutineFunc func = [i](){
+            for (int j = 0; j < 5; ++j) {
+                cout << "[coroutine_t " << ecoroutine::self() << "] " << j << endl;
+                ecoroutine::yield();
+            }
+        };
+        coroutines.push_back(ecoroutine::create(func));
+    }
+
+    for (auto x : coroutines) {
+        ecoroutine::start(x);
+    }
     return 0;
 }

@@ -6,7 +6,6 @@
 
 #include <iostream>
 #include <list>
-#include <string>
 #include <sstream>
 
 
@@ -16,27 +15,26 @@ static void schedule();
 
 struct Coroutine {
 
-    Coroutine(coroutine_t id, CoFunction &func) {
+    Coroutine(coroutine_t id, CoroutineFunc &func) {
+        id_ = id;
         func_ = func;
 
         getcontext(&context_);
-
         stack_ = (char*)malloc(kStackSize);
         context_.uc_stack.ss_sp = stack_;
         context_.uc_stack.ss_size = kStackSize;
         context_.uc_link = NULL;
+        state_ = CoState::kReady;
 
         makecontext(&context_, reinterpret_cast<void(*)()>(RunCoroutineFunc), 2,
                     reinterpret_cast<size_t>(this) >> 32, this);
-
-        state_ = CoState::kReady;
     }
 
     ~Coroutine() {
         delete stack_;
     }
 
-    CoFunction func_;
+    CoroutineFunc func_;
     CoState state_;
     coroutine_t id_;
     ucontext_t context_;
@@ -59,99 +57,121 @@ public:
 
 public:
 
-    Scheduler() { }
+    Scheduler() = default;
 
-    coroutine_t Create(CoFunction &func) {
-        auto p = std::make_shared<Coroutine>(next_id_, func);
-        ++next_id_;
-
-        all_coroutines_.push_back(p);
-        ready_coroutines_.push_back(p);
-
-        Schedule();
-
-        return p->id_;
-    }
+    coroutine_t Create(CoroutineFunc &func);
 
     coroutine_t RunningId() {
         return running_id_;
     }
 
+    void Start(coroutine_t c);
+
     void Yield();
 
-
-    void Schedule();
+    void DoSchedule();
 
 private:
 
     CoroutinePtr GetCurrentCoroutine() {
         CoroutinePtr curr = nullptr;
-        for (auto x : all_coroutines_) {
-            if (x->id_ == running_id_) {
-                curr = x;
-                break;
-            }
+        if (id_map_.count(running_id_)) {
+            curr = id_map_[running_id_];
         }
         return curr;
     }
 
 private:
 
+    std::unordered_map<coroutine_t, CoroutinePtr> id_map_;
     std::list<CoroutinePtr> all_coroutines_;
     std::list<CoroutinePtr> ready_coroutines_;
 
     ucontext_t main_context_;
     coroutine_t next_id_ { 1 };
     coroutine_t running_id_ { 0 };
+
 };
 
-void Scheduler::Schedule() {
+
+coroutine_t Scheduler::Create(CoroutineFunc &func) {
+    auto p = std::make_shared<Coroutine>(next_id_, func);
+    ++next_id_;
+
+    ready_coroutines_.push_back(p);
+    all_coroutines_.push_back(p);
+    id_map_[p->id_] = p;
+
+    return p->id_;
+}
+
+void Scheduler::DoSchedule() {
     CoroutinePtr curr = GetCurrentCoroutine();
 
-    if (ready_coroutines_.empty()) {
-        swapcontext(&curr->context_, &main_context_);
-    }
+    //current is main coroutine
+    if (curr == nullptr) {
+        if (!ready_coroutines_.empty()) {
+            CoroutinePtr next = ready_coroutines_.front();
+            ready_coroutines_.pop_front();
+            next->state_ = CoState::kRunning;
+            running_id_ = next->id_;
+            swapcontext(&main_context_, &next->context_);
+        }
+    } else {
+        //not main coroutines
+        if (curr->state_ == CoState::kDead) {
+            all_coroutines_.remove(curr);
+        }
+        if (curr->state_ == CoState::kHangUp) {
+            ready_coroutines_.push_back(curr);
+        }
 
-    auto next = ready_coroutines_.front();
-    ready_coroutines_.pop_front();
+        if (ready_coroutines_.empty()) {
+            running_id_ = 0;
+            swapcontext(&curr->context_, &main_context_);
+        } else {
+            CoroutinePtr next = ready_coroutines_.front();
+            ready_coroutines_.pop_front();
 
-    if (curr->state_ == CoState::kHangUp) {
-        ready_coroutines_.push_front(curr);
-    }
-
-    if (curr->state_ == CoState::kDead) {
-        all_coroutines_.remove(curr);
-    }
-
-    if (next->state_ == CoState::kReady) {
-        next->state_ = CoState::kRunning;
-        next->context_.uc_link = &main_context_;
-
-        running_id_ = next->id_;
-        swapcontext(&main_context_, &next->context_);
-
-    } else if (next->state_ == CoState::kHangUp) {
-
-        next->state_ = CoState::kRunning;
-        next->context_.uc_link = &curr->context_;
-
-        running_id_ = next->id_;
-        swapcontext(&curr->context_, &next->context_);
-
+            if (next->state_ == CoState::kReady || next->state_ == CoState::kHangUp) {
+                next->state_ = CoState::kRunning;
+                next->context_.uc_link = &main_context_;
+                running_id_ = next->id_;
+                swapcontext(&curr->context_, &next->context_);
+            }
+        }
     }
 }
 
 void Scheduler::Yield() {
     CoroutinePtr curr = GetCurrentCoroutine();
+
+    if (curr == nullptr) {
+        HandleError("can't yield main coroutine!\n");
+    }
+
     curr->state_ = CoState::kHangUp;
-    Schedule();
+    DoSchedule();
+}
+
+void Scheduler::Start(coroutine_t c) {
+    CoroutinePtr p = nullptr;
+
+    if (id_map_.count(c)) {
+        p = id_map_[c];
+    } else {
+        HandleError("no such coroutine_t");
+    }
+
+    p->state_ = CoState::kReady;
+    DoSchedule();
 }
 
 /*-------------------------------------------------------------------------------------*/
 
 static Scheduler scheduler;
 
-coroutine_t create(CoFunction &func) {
+coroutine_t create(CoroutineFunc &func) {
     return scheduler.Create(func);
 }
 
@@ -163,9 +183,12 @@ void yield() {
     scheduler.Yield();
 }
 
-static void schedule() {
-    scheduler.Schedule();
+void start(coroutine_t c) {
+    scheduler.Start(c);
 }
 
+static void schedule() {
+    scheduler.DoSchedule();
+}
 
 };
