@@ -41,7 +41,7 @@ it'll report an error. Because coroutine is non-preemptive, the only way to give
 yield. And the current coroutine's state will change to HangUp, and the scheduler will begin
 to work.
 
-### What's the performance?
+### How's the performance?
 Comparing to C++11 std::thread, ecoroutine doesn't need to do context switch in kernel mode. So it's quietly faster than std::thread.
 
 I create and destroy thread/coroutine for 10,000,000 times to show the difference of their performance.
