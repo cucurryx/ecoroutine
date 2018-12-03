@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <thread>
 
-constexpr uint32_t loop_times = 500 * 10000;
+constexpr uint32_t loop_times = 500 * 100;
 
 uint64_t coroutine_test() {
     ecoroutine::CoroutineFunc func = [](){};

@@ -13,34 +13,21 @@
 
 namespace ecoroutine {
 
-constexpr u_int32_t kStackSize = 1024 * 1024;
+    using CoroutineFunc = std::function<void()>;
+    using coroutine_t = u_int32_t;
 
-using CoroutineFunc = std::function<void()>;
-using coroutine_t = u_int32_t;
+    // create a coroutine and return the id of this coroutine
+    // param1: func, coroutine function
+    coroutine_t create(CoroutineFunc &func);
 
-enum class CoState {
-    kReady,
-    kRunning,
-    kHangUp,
-    kDead
-};
+    // like pthread_self(), get the id of the coroutine itself
+    coroutine_t self();
 
-static void HandleError(const std::string &msg) {
-    perror(msg.c_str());
-    exit(EXIT_FAILURE);
-}
+    // run a coroutine whose state is kReady or kHangUp
+    void run(coroutine_t c);
 
-/*-------------------------------------------------------------------------------------*/
-
-//predeclerations of functions
-
-coroutine_t create(CoroutineFunc &func);
-
-coroutine_t self();
-
-void run(coroutine_t c);
-
-void yield();
+    // give up control of CPU
+    void yield();
 
 };
 
