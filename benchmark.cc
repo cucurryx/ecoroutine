@@ -9,16 +9,15 @@
 #include <stdio.h>
 #include <thread>
 
-constexpr uint32_t loop_times = 100000;
+constexpr uint32_t loop_times = 500 * 10000;
 
 uint64_t coroutine_test() {
-    ecoroutine::CoroutineFunc func = [](){ ecoroutine::yield(); };
+    ecoroutine::CoroutineFunc func = [](){};
+
     clock_t start = clock();
     for (int i = 0; i < loop_times; ++i) {
         ecoroutine::coroutine_t coroutine1 = ecoroutine::create(func);
         ecoroutine::coroutine_t coroutine2 = ecoroutine::create(func);
-        ecoroutine::run(coroutine1);
-        ecoroutine::run(coroutine2);
         ecoroutine::run(coroutine1);
         ecoroutine::run(coroutine2);
     }

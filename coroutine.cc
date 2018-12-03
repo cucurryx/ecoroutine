@@ -11,8 +11,6 @@
 #include <sstream>
 
 
-static int free_cnt = 0;
-
 namespace ecoroutine {
 
 static void schedule();
@@ -123,19 +121,24 @@ void Scheduler::DoSchedule() {
             next->state_ = CoState::kRunning;
             running_id_ = next->id_;
             swapcontext(&main_context_, &next->context_);
+
+            //if come back from dead coroutine
+            if (next->state_ == CoState::kDead) {
+                id_map_.erase(next->id_);
+                ready_coroutines_.remove(next);
+                all_coroutines_.remove(next);
+            }
         }
     } else {
-        //not main coroutines
-        if (curr->state_ == CoState::kDead) {
-            id_map_.erase(curr->id_);
 
-            ready_coroutines_.remove(curr);
-            all_coroutines_.remove(curr);
+        ucontext_t *curr_context = &curr->context_;
+        if(curr->state_==CoState::kDead){
+            curr.reset();
         }
 
         //switch to main coroutine
         running_id_ = 0;
-        swapcontext(&curr->context_, &main_context_);
+        swapcontext(curr_context, &main_context_);
     }
 }
 

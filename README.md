@@ -2,7 +2,17 @@
 
 A simple stackful asymmetric scheduling coroutine library for modern C++.
 
+- schedule algorithm: asymmetric coroutine sheduling, same as [libgo](https://github.com/yyzybb537/libgo)
+- coroutine stack: virtual memory stack
+
+
 ### How to use?
+
+#### build
+```
+cmake .
+make example && make benchmark
+```
 
 #### create a coroutine
 ```C++
@@ -13,40 +23,43 @@ Notice: this `create` is different from the `pthread_create`, since the coroutin
 not begin to work immediatly. You need to call `ecoroutine::start`.
 
 
-#### start a coroutine
+#### run a coroutine
+If a coroutie has been created but not running yet, you need run. If a coroutine has called yield,
+you need run to make it running again.
+
 ```C++
-ecoroutine::start(c);
+ecoroutine::run(c);
 ```
 
 #### yield a coroutine
 ```C++
 ecoroutine::yield();
 ```
+
 `yield` will yield the current running coroutine. If you try to yield the main coroutine,
 it'll report an error. Because coroutine is non-preemptive, the only way to give up control of CPU is
 yield. And the current coroutine's state will change to HangUp, and the scheduler will begin
 to work.
 
-#### benchmark
+### What's the performance?
 Comparing to C++11 std::thread, ecoroutine doesn't need to do context switch in kernel mode. So it's quietly faster than std::thread.
 
-I create and destroy thread/coroutine for 2,000,000 times to show the difference of their performance. 
+I create and destroy thread/coroutine for 10,000,000 times to show the difference of their performance.
 
 ![./pics/bench.png](./pics/bench.png)
 
 benchmark code：
 
 ```C++
-constexpr uint32_t loop_times = 100000;
+constexpr uint32_t loop_times = 500 * 1000;
 
 uint64_t coroutine_test() {
-    ecoroutine::CoroutineFunc func = [](){ ecoroutine::yield(); };
+    ecoroutine::CoroutineFunc func = [](){};
+
     clock_t start = clock();
     for (int i = 0; i < loop_times; ++i) {
         ecoroutine::coroutine_t coroutine1 = ecoroutine::create(func);
         ecoroutine::coroutine_t coroutine2 = ecoroutine::create(func);
-        ecoroutine::run(coroutine1);
-        ecoroutine::run(coroutine2);
         ecoroutine::run(coroutine1);
         ecoroutine::run(coroutine2);
     }
@@ -80,89 +93,6 @@ int main(int argc, char* argv[]) {
 
 ```
 
-#### example
-
-```C++
-int main() {
-    vector<ecoroutine::coroutine_t> coroutines;
-    for (int i = 0; i < 10; ++i) {
-        ecoroutine::CoroutineFunc func = [i](){
-            for (int j = 0; j < 3; ++j) {
-                cout << "[coroutine_t " << ecoroutine::self() << "] before yield:" << j << endl;
-                ecoroutine::yield();
-                cout << "[coroutine_t " << ecoroutine::self() << "] after yiled: " << j << endl;
-            }
-        };
-        coroutines.push_back(ecoroutine::create(func));
-    }
-
-    for (auto x : coroutines) {
-        ecoroutine::start(x);
-    }
-    return 0;
-}
-```
-
-result:
-```
-[coroutine_t 1] before yield:0
-[coroutine_t 2] before yield:0
-[coroutine_t 3] before yield:0
-[coroutine_t 4] before yield:0
-[coroutine_t 5] before yield:0
-[coroutine_t 6] before yield:0
-[coroutine_t 7] before yield:0
-[coroutine_t 8] before yield:0
-[coroutine_t 9] before yield:0
-[coroutine_t 10] before yield:0
-[coroutine_t 1] after yiled: 0
-[coroutine_t 1] before yield:1
-[coroutine_t 2] after yiled: 0
-[coroutine_t 2] before yield:1
-[coroutine_t 3] after yiled: 0
-[coroutine_t 3] before yield:1
-[coroutine_t 4] after yiled: 0
-[coroutine_t 4] before yield:1
-[coroutine_t 5] after yiled: 0
-[coroutine_t 5] before yield:1
-[coroutine_t 6] after yiled: 0
-[coroutine_t 6] before yield:1
-[coroutine_t 7] after yiled: 0
-[coroutine_t 7] before yield:1
-[coroutine_t 8] after yiled: 0
-[coroutine_t 8] before yield:1
-[coroutine_t 9] after yiled: 0
-[coroutine_t 9] before yield:1
-[coroutine_t 10] after yiled: 0
-[coroutine_t 10] before yield:1
-[coroutine_t 1] after yiled: 1
-[coroutine_t 1] before yield:2
-[coroutine_t 2] after yiled: 1
-[coroutine_t 2] before yield:2
-[coroutine_t 3] after yiled: 1
-[coroutine_t 3] before yield:2
-[coroutine_t 4] after yiled: 1
-[coroutine_t 4] before yield:2
-[coroutine_t 5] after yiled: 1
-[coroutine_t 5] before yield:2
-[coroutine_t 6] after yiled: 1
-[coroutine_t 6] before yield:2
-[coroutine_t 7] after yiled: 1
-[coroutine_t 7] before yield:2
-[coroutine_t 8] after yiled: 1
-[coroutine_t 8] before yield:2
-[coroutine_t 9] after yiled: 1
-[coroutine_t 9] before yield:2
-[coroutine_t 10] after yiled: 1
-[coroutine_t 10] before yield:2
-[coroutine_t 1] after yiled: 2
-[coroutine_t 2] after yiled: 2
-[coroutine_t 3] after yiled: 2
-[coroutine_t 4] after yiled: 2
-[coroutine_t 5] after yiled: 2
-[coroutine_t 6] after yiled: 2
-[coroutine_t 7] after yiled: 2
-[coroutine_t 8] after yiled: 2
-[coroutine_t 9] after yiled: 2
-[coroutine_t 10] after yiled: 2
-```
+### future
+- maybe a channel for data transfer
+- maybe hook for networking I/O
